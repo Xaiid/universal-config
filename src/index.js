@@ -53,7 +53,7 @@ class Config {
   }
 
   setEnvironment() {
-    if (process.browser) {
+    if(typeof(window) == 'object' || process.browser) {
       this._env = 'client';
     } else {
       this._env = 'server';
@@ -61,13 +61,18 @@ class Config {
   }
 
   getServerVars() {
+    if(typeof(window) == 'object') {
+      return {};
+    }
+
     let serverVars = {};
+    serverVars = require('./config/server')();
 
     if (this._env === 'server') {
       try {
-        serverVars = require('../../../config/server');
+        serverVars = require('./config/server')();
       } catch(e) {
-        if (process.env.NODE_ENV === 'development') {
+        if (typeof(window) == 'object' || process.env.NODE_ENV === 'development') {
           console.warn(`Didn't find a server config in \`./config\`.`);
         }
       }
@@ -80,11 +85,11 @@ class Config {
     let clientVars;
 
     try {
-      clientVars = require('../../../config/client');
+      clientVars = {};
     } catch(e) {
       clientVars = {};
 
-      if (process.env.NODE_ENV === 'development') {
+      if (typeof(window) == 'object' || process.env.NODE_ENV === 'development') {
         console.warn(`Didn't find a client config in \`./config\`.`);
       }
     }
@@ -94,12 +99,16 @@ class Config {
 
   getLocalOverrides() {
     let overrides;
-    const filename = process.env.NODE_ENV === 'production' ? 'prod' : 'dev';
+    const filename = (typeof(window) == 'object' || process.env.NODE_ENV === 'production') ? 'prod' : 'dev';
+
+    if(typeof(window) == 'object') {
+      return {};
+    }
 
     try {
-      overrides = process.env.NODE_ENV === 'production'
-        ? require('../../../config/prod')
-        : require('../../../config/dev');
+      overrides = (typeof(window) == 'object' || process.env.NODE_ENV === 'production')
+        ? require('./config/prod')()
+        : require('./config/dev')();
 
       console.warn(`Using local overrides in \`./config/${filename}.js\`.`);
     } catch(e) {
@@ -124,6 +133,9 @@ class Config {
     });
 
     return store_key;
+  }
+
+  getConfigDb(){
   }
 }
 
